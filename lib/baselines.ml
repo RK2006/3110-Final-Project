@@ -33,11 +33,11 @@ let run_policy (env : Environment.t) (policy : int -> Environment.action) :
   }
 
 let buy_and_hold env =
-  let entered = ref false in
+  let bought = ref 0 in
   run_policy env (fun _ ->
-      if !entered then Environment.Hold
+      if !bought >= Config.max_position then Environment.Hold
       else begin
-        entered := true;
+        incr bought;
         Environment.Buy
       end)
 
