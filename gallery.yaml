@@ -1,5 +1,4 @@
 ---
-# Members of your group.
 group:  
   - name: Rishabh Kumaran
     netid: rak333
@@ -10,19 +9,13 @@ group:
   - name: Simran Duggi
     netid: sd962
 
-# Your PM.
 pm:
   name: Timothy Nguyen
   netid: thn9
-# Set to false if you don't want your gallery entry to be public.
 publish: true
-# Pithy title
 title: "Q-Learning Stock Trading Agent"
-# OK if this is a Cornell Github link, but public gallery viewers won't be able to see it.
 git-repo: "https://github.coecis.cornell.edu/ak2788/TeamProject3110"
-# Replace the URL with your own demo video.
 demo-video-url: "https://youtu.be/9Saq79bCdsc"
-# Write a short, attention-grabbing description of your project.
 desc: >
   This system trains a Q-Learning RL agent to make buy, sell, hold decisions on historical stock market data. 
   It learns profitable trading strategies through trial and error. The user would interact with an interface where they can enter
