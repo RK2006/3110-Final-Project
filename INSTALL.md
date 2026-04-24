@@ -21,7 +21,7 @@ python data/fetch_stock_data.py STOCK_TICKER data/STOCK_TICKER_data.csv
 ```
 This will download price data and save a CSV to `data/` automatically.
 
-**Option 2 — Bring your own CSV:**
+**Option 2 — Use your own CSV:**
 Create or download a CSV file in the following format and place it in `data/`:
 ```
 Date,Close
