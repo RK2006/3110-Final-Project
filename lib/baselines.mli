@@ -1,6 +1,6 @@
-(** Non-learning policies for comparison against the Q-learning agent.
+(** Non-learning policies for comparison against the Q-learning agent
     Each runs a full pass over an Environment and returns the PnL curve
-    plus trade counts, matching what Metrics.compute expects. *)
+    plus trade counts, matching whatever Metrics.compute expect *)
 
 type run_result = {
   pnl_curve : float array;
