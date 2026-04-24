@@ -1,3 +1,11 @@
+(** AF: the scorecard for one episode. [total_pnl] and [final_pnl] are both the
+    last value on the PnL curve. [sharpe_ratio] is mean/stddev of the per-step
+    PnL changes (0 if stddev is 0). [max_drawdown] is the worst peak-to-trough
+    drop in dollars. [win_rate] is wins over trades (0 if no trades).
+    [num_trades] excludes Holds.
+
+    RI: [max_drawdown >= 0]; [win_rate] is in [[0, 1]]; [total_pnl = final_pnl].
+*)
 type t = {
   total_pnl : float;
   sharpe_ratio : float;
@@ -71,8 +79,7 @@ let print m =
   Printf.printf "Total PnL:     $%.2f\n" m.total_pnl;
   Printf.printf "Sharpe ratio:  %.4f\n" m.sharpe_ratio;
   Printf.printf "Max drawdown:  $%.2f\n" m.max_drawdown;
-  Printf.printf "Win rate:      %.2f%% (%d / %d trades)\n"
-    (m.win_rate *. 100.0)
+  Printf.printf "Win rate:      %.2f%% (%d / %d trades)\n" (m.win_rate *. 100.0)
     (int_of_float ((m.win_rate *. float_of_int m.num_trades) +. 0.5))
     m.num_trades;
   Printf.printf "Final PnL:     $%.2f\n" m.final_pnl

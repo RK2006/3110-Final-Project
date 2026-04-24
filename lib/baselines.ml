@@ -1,3 +1,9 @@
+(** AF: what one run of a baseline policy produced. [pnl_curve.(i)] is the
+    cumulative dollar PnL after bar [i], [num_trades] counts the Buy/Sell
+    actions (Holds don't count), and [winning_trades] is how many of those had a
+    positive one-bar reward.
+
+    RI: [0 <= winning_trades <= num_trades]. *)
 type run_result = {
   pnl_curve : float array;
   num_trades : int;

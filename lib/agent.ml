@@ -1,3 +1,9 @@
+(** AF: a tabular Q-learner. [q.(s).(a)] is our current guess of Q(s,a). [alpha]
+    is the learning rate, [gamma] the discount, and [epsilon] the chance of
+    acting randomly during training.
+
+    RI: [num_states, num_actions > 0]; [q] is shaped [num_states x num_actions];
+    [alpha], [gamma], [epsilon] all live in [[0, 1]]. *)
 type t = {
   num_states : int;
   num_actions : int;

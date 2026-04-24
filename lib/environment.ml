@@ -14,12 +14,29 @@ let action_of_int = function
   | 2 -> Buy
   | n -> failwith (Printf.sprintf "action_of_int: invalid %d" n)
 
+(** AF: what one bar of simulation gave back: the new encoded state id, the
+    dollar reward on that bar, and whether the episode is done.
+
+    RI: [0 <= next_state < Config.num_states]. *)
 type step_result = {
   next_state : int;
   reward : float;
   terminal : bool;
 }
 
+(** AF: the replayed trading world. [prices] is the close series from the CSV;
+    [volatilities.(i)] is the rolling-return standard deviation ending at bar
+    [i] (the first [warmup] entries are junk zeros); [vol_thresholds] are the
+    four quintile cuts used to bucket volatility; [idx] is the bar we're on;
+    [position] is how many shares we hold (no shorting); [pnl] is running
+    dollars made, starting at 0 and net of costs.
+
+    RI: [prices] and [volatilities] have the same length, which is
+    [> warmup + 1]. [vol_thresholds] has [Config.num_volatility_buckets - 1]
+    entries, sorted.
+    [warmup = max Config.long_ma_window Config.volatility_window].
+    [warmup <= idx <= Array.length prices - 1].
+    [0 <= position <= Config.max_position]. every price is strictly positive *)
 type t = {
   prices : float array;
   volatilities : float array;
