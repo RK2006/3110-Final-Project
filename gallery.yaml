@@ -21,7 +21,7 @@ title: "Q-Learning Stock Trading Agent"
 # OK if this is a Cornell Github link, but public gallery viewers won't be able to see it.
 git-repo: "https://github.coecis.cornell.edu/ak2788/TeamProject3110"
 # Replace the URL with your own demo video.
-demo-video-url: "[INSERT HERE]"
+demo-video-url: "https://youtu.be/9Saq79bCdsc"
 # Write a short, attention-grabbing description of your project.
 desc: >
   This system trains a Q-Learning RL agent to make buy, sell, hold decisions on historical stock market data. 
