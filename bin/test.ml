@@ -1,7 +1,7 @@
 open Teamproject3110
 
 let rec prompt_file folder prompt =
-  Printf.printf "%s" prompt;
+  Printf.printf "%s%!" prompt;
   let name = String.trim (input_line stdin) in
   let path = folder ^ name in
   if Sys.file_exists path then path
