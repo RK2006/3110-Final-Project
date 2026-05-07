@@ -1,5 +1,5 @@
 (test
- (name tests)
+ (name test_teamproject3110)
  (libraries teamproject3110 ounit2)
  (instrumentation
   (backend bisect_ppx)))

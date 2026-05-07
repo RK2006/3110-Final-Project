@@ -1,9 +1,3 @@
-(** AF: what one run of a baseline policy produced. [pnl_curve.(i)] is the
-    cumulative dollar PnL after bar [i], [num_trades] counts the Buy/Sell
-    actions (Holds don't count), and [winning_trades] is how many of those had a
-    positive one-bar reward.
-
-    RI: [0 <= winning_trades <= num_trades]. *)
 type run_result = {
   pnl_curve : float array;
   num_trades : int;
@@ -14,28 +8,22 @@ let run_policy (env : Environment.t) (policy : int -> Environment.action) :
     run_result =
   let _ = Environment.reset env in
   let n = Environment.episode_length env in
-  let pnls = ref [] in
-  let num_trades = ref 0 in
-  let winning_trades = ref 0 in
+  let pnls = ref [ 0.0 ] in
   let rec loop i =
     if i >= n then ()
     else
       let s = Environment.current_state env in
       let a = policy s in
       let r = Environment.step env a in
-      (match a with
-      | Environment.Hold -> ()
-      | Environment.Buy | Environment.Sell ->
-          incr num_trades;
-          if r.reward > 0.0 then incr winning_trades);
       pnls := Environment.pnl env :: !pnls;
       if r.terminal then () else loop (i + 1)
   in
   loop 0;
+  let summary = Environment.trade_summary env in
   {
     pnl_curve = Array.of_list (List.rev !pnls);
-    num_trades = !num_trades;
-    winning_trades = !winning_trades;
+    num_trades = summary.num_closed_trades;
+    winning_trades = summary.winning_closed_trades;
   }
 
 let buy_and_hold env =

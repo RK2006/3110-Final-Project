@@ -1,16 +1,9 @@
-(** AF: the scorecard for one episode. [total_pnl] and [final_pnl] are both the
-    last value on the PnL curve. [sharpe_ratio] is mean/stddev of the per-step
-    PnL changes (0 if stddev is 0). [max_drawdown] is the worst peak-to-trough
-    drop in dollars. [win_rate] is wins over trades (0 if no trades).
-    [num_trades] excludes Holds.
-
-    RI: [max_drawdown >= 0]; [win_rate] is in [[0, 1]]; [total_pnl = final_pnl].
-*)
 type t = {
   total_pnl : float;
   sharpe_ratio : float;
   max_drawdown : float;
   win_rate : float;
+  winning_trades : int;
   num_trades : int;
   final_pnl : float;
 }
@@ -63,6 +56,7 @@ let compute ~pnl_curve ~num_trades ~winning_trades =
     sharpe_ratio = sharpe pnl_curve;
     max_drawdown = max_drawdown pnl_curve;
     win_rate;
+    winning_trades;
     num_trades;
     final_pnl = final;
   }
@@ -70,9 +64,9 @@ let compute ~pnl_curve ~num_trades ~winning_trades =
 let to_csv m path =
   let oc = open_out path in
   output_string oc
-    "total_pnl,sharpe_ratio,max_drawdown,win_rate,num_trades,final_pnl\n";
-  Printf.fprintf oc "%f,%f,%f,%f,%d,%f\n" m.total_pnl m.sharpe_ratio
-    m.max_drawdown m.win_rate m.num_trades m.final_pnl;
+    "total_pnl,sharpe_ratio,max_drawdown,win_rate,winning_trades,num_trades,final_pnl\n";
+  Printf.fprintf oc "%f,%f,%f,%f,%d,%d,%f\n" m.total_pnl m.sharpe_ratio
+    m.max_drawdown m.win_rate m.winning_trades m.num_trades m.final_pnl;
   close_out oc
 
 let print m =
@@ -80,6 +74,5 @@ let print m =
   Printf.printf "Sharpe ratio:  %.4f\n" m.sharpe_ratio;
   Printf.printf "Max drawdown:  $%.2f\n" m.max_drawdown;
   Printf.printf "Win rate:      %.2f%% (%d / %d trades)\n" (m.win_rate *. 100.0)
-    (int_of_float ((m.win_rate *. float_of_int m.num_trades) +. 0.5))
-    m.num_trades;
+    m.winning_trades m.num_trades;
   Printf.printf "Final PnL:     $%.2f\n" m.final_pnl

@@ -14,29 +14,12 @@ let action_of_int = function
   | 2 -> Buy
   | n -> failwith (Printf.sprintf "action_of_int: invalid %d" n)
 
-(** AF: what one bar of simulation gave back: the new encoded state id, the
-    dollar reward on that bar, and whether the episode is done.
-
-    RI: [0 <= next_state < Config.num_states]. *)
 type step_result = {
   next_state : int;
   reward : float;
   terminal : bool;
 }
 
-(** AF: the replayed trading world. [prices] is the close series from the CSV;
-    [volatilities.(i)] is the rolling-return standard deviation ending at bar
-    [i] (the first [warmup] entries are junk zeros); [vol_thresholds] are the
-    four quintile cuts used to bucket volatility; [idx] is the bar we're on;
-    [position] is how many shares we hold (no shorting); [pnl] is running
-    dollars made, starting at 0 and net of costs.
-
-    RI: [prices] and [volatilities] have the same length, which is
-    [> warmup + 1]. [vol_thresholds] has [Config.num_volatility_buckets - 1]
-    entries, sorted.
-    [warmup = max Config.long_ma_window Config.volatility_window].
-    [warmup <= idx <= Array.length prices - 1].
-    [0 <= position <= Config.max_position]. every price is strictly positive *)
 type t = {
   prices : float array;
   volatilities : float array;
@@ -45,6 +28,7 @@ type t = {
   mutable idx : int;
   mutable position : int;
   mutable pnl : float;
+  trade_stats : Trade_stats.t;
 }
 
 let load_prices path =
@@ -144,12 +128,14 @@ let load path =
     idx = warmup;
     position = 0;
     pnl = 0.0;
+    trade_stats = Trade_stats.create ();
   }
 
 let reset t =
   t.idx <- t.warmup;
   t.position <- 0;
   t.pnl <- 0.0;
+  Trade_stats.reset t.trade_stats;
   state_at t
 
 (*core RL loop that gets called every bar. executes trade, computes reward,
@@ -162,10 +148,14 @@ let step t action =
   (match action with
   | Buy when t.position < Config.max_position ->
       t.position <- t.position + 1;
-      cost := Config.transaction_cost *. price
+      cost := Config.transaction_cost *. price;
+      Trade_stats.record_fill t.trade_stats ~delta_position:1 ~price
+        ~transaction_cost:Config.transaction_cost
   | Sell when t.position > 0 ->
       t.position <- t.position - 1;
-      cost := Config.transaction_cost *. price
+      cost := Config.transaction_cost *. price;
+      Trade_stats.record_fill t.trade_stats ~delta_position:(-1) ~price
+        ~transaction_cost:Config.transaction_cost
   | _ -> ());
   let n = Array.length t.prices in
   let next_idx = t.idx + 1 in
@@ -180,4 +170,5 @@ let step t action =
 
 let current_state t = state_at t
 let pnl t = t.pnl
+let trade_summary t = Trade_stats.summary t.trade_stats
 let episode_length t = Array.length t.prices - 1 - t.warmup
