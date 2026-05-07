@@ -26,4 +26,6 @@ let run () =
   Printf.printf "\n── Q-learning Test Metrics ──\n";
   Metrics.print evaluation.metrics;
   Cli_helpers.maybe_print_pnl_curve evaluation.pnl_curve;
-  Cli_helpers.maybe_save_pnl_curve evaluation.pnl_curve
+  Cli_helpers.maybe_save_pnl_curve evaluation.pnl_curve;
+  Cli_helpers.maybe_save_svg_plot ~actions:evaluation.actions
+    ~title:"Q-learning Test PnL" evaluation.pnl_curve

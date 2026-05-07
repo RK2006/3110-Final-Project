@@ -16,6 +16,8 @@ type evaluation = {
   pnl_curve : float array;  (** cumulative PnL, beginning at 0 *)
   metrics : Metrics.t;  (** aggregate metrics derived from [pnl_curve] *)
   trade_summary : Trade_stats.summary;  (** closed-trade accounting *)
+  actions : Environment.action array;
+      (** action taken at each step; element [i] produced [pnl_curve.(i + 1)] *)
 }
 
 (** Complete output of one train-then-evaluate cycle. *)

@@ -12,6 +12,7 @@ type evaluation = {
   pnl_curve : float array;
   metrics : Metrics.t;
   trade_summary : Trade_stats.summary;
+  actions : Environment.action array;
 }
 
 type trained_run = {
@@ -53,29 +54,32 @@ let describe_hyperparameters h =
     h.alpha h.gamma h.epsilon_start h.epsilon_min h.epsilon_decay h.num_episodes
     h.seed
 
-let evaluation_from_curve env pnl_curve =
+let evaluation_from_curve env pnl_curve actions =
   let trade_summary = Environment.trade_summary env in
   let metrics =
     Metrics.compute ~pnl_curve ~num_trades:trade_summary.num_closed_trades
       ~winning_trades:trade_summary.winning_closed_trades
   in
-  { pnl_curve; metrics; trade_summary }
+  { pnl_curve; metrics; trade_summary; actions }
 
 let evaluate_policy env policy =
   let ep_len = Environment.episode_length env in
   let pnl_curve = Array.make (ep_len + 1) 0.0 in
+  let actions = Array.make ep_len Environment.Hold in
   let state = ref (Environment.reset env) in
   let terminal = ref false in
   let step_idx = ref 1 in
   while not !terminal do
     let action = policy !state in
+    actions.(!step_idx - 1) <- action;
     let result = Environment.step env action in
     pnl_curve.(!step_idx) <- Environment.pnl env;
     incr step_idx;
     state := result.next_state;
     terminal := result.terminal
   done;
-  evaluation_from_curve env pnl_curve
+  let actions_taken = Array.sub actions 0 (!step_idx - 1) in
+  evaluation_from_curve env pnl_curve actions_taken
 
 let evaluate_agent env agent =
   evaluate_policy env (fun state ->

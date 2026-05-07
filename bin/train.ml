@@ -11,6 +11,8 @@ let run env =
   Metrics.print run.evaluation.metrics;
   Cli_helpers.maybe_print_pnl_curve run.evaluation.pnl_curve;
   Cli_helpers.maybe_save_pnl_curve run.evaluation.pnl_curve;
+  Cli_helpers.maybe_save_svg_plot ~actions:run.evaluation.actions
+    ~title:"Q-learning Training PnL" run.evaluation.pnl_curve;
 
   if Cli_helpers.prompt_yes_no "\nSave model? (y/n): " then begin
     Printf.printf "Enter filename to save model (in models/): %!";

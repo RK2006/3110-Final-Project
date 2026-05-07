@@ -48,6 +48,8 @@ let run () =
       Metrics.print best.evaluation.metrics;
       Cli_helpers.maybe_print_pnl_curve best.evaluation.pnl_curve;
       Cli_helpers.maybe_save_pnl_curve best.evaluation.pnl_curve;
+      Cli_helpers.maybe_save_svg_plot ~actions:best.evaluation.actions
+        ~title:"Grid Search Best Run PnL" best.evaluation.pnl_curve;
       if Cli_helpers.prompt_yes_no "\nSave best model? (y/n): " then begin
         Printf.printf "Enter filename to save model (in models/): %!";
         let model_name = String.trim (input_line stdin) in

@@ -297,12 +297,118 @@ struct
     ]
 end
 
+module SvgPlotTester (S : module type of Svg_plot) = struct
+  let read_all path =
+    let ic = open_in path in
+    let n = in_channel_length ic in
+    let s = really_input_string ic n in
+    close_in ic;
+    s
+
+  let substring_count ~needle haystack =
+    if needle = "" then 0
+    else
+      let nl = String.length needle in
+      let hl = String.length haystack in
+      let count = ref 0 in
+      let i = ref 0 in
+      while !i <= hl - nl do
+        if String.sub haystack !i nl = needle then begin
+          incr count;
+          i := !i + nl
+        end
+        else incr i
+      done;
+      !count
+
+  let contains haystack needle = substring_count ~needle haystack > 0
+
+  let test_render_basic_structure _ =
+    let svg = S.render [| 0.0; 1.0; -1.0; 2.0 |] in
+    assert_bool "starts with <svg" (contains svg "<svg ");
+    assert_bool "has style block" (contains svg "<style>");
+    assert_bool "has frame rect" (contains svg "class=\"frame\"");
+    assert_bool "has pnl polyline" (contains svg "class=\"pnl\"");
+    assert_bool "has zero line when crossing zero" (contains svg "class=\"zero\"");
+    assert_bool "has closing tag" (contains svg "</svg>")
+
+  let test_render_no_zero_line_when_strictly_positive _ =
+    let svg = S.render [| 1.0; 2.0; 3.0 |] in
+    assert_bool "no zero line for strictly positive curve"
+      (not (contains svg "class=\"zero\""))
+
+  let test_render_with_actions_includes_markers _ =
+    let actions =
+      [| Environment.Buy; Environment.Hold; Environment.Sell; Environment.Hold |]
+    in
+    let curve = [| 0.0; 1.0; 1.5; 0.5; 0.8 |] in
+    let svg = S.render ~actions curve in
+    assert_equal
+      ~msg:"buy class occurs twice (marker + legend)"
+      ~printer:string_of_int 2
+      (substring_count ~needle:"class=\"buy\"" svg);
+    assert_equal
+      ~msg:"sell class occurs twice (marker + legend)"
+      ~printer:string_of_int 2
+      (substring_count ~needle:"class=\"sell\"" svg)
+
+  let test_render_no_legend_markers_without_actions _ =
+    let svg = S.render [| 0.0; 1.0; 2.0 |] in
+    assert_equal ~msg:"no buy class without actions" 0
+      (substring_count ~needle:"class=\"buy\"" svg) ~printer:string_of_int;
+    assert_equal ~msg:"no sell class without actions" 0
+      (substring_count ~needle:"class=\"sell\"" svg) ~printer:string_of_int
+
+  let test_render_custom_title _ =
+    let config = { S.default_config with title = "My Run" } in
+    let svg = S.render ~config [| 0.0; 1.0 |] in
+    assert_bool "title appears" (contains svg ">My Run<")
+
+  let test_render_escapes_xml_in_title _ =
+    let config = { S.default_config with title = "A & B <c>" } in
+    let svg = S.render ~config [| 0.0; 1.0 |] in
+    assert_bool "ampersand escaped" (contains svg "A &amp; B");
+    assert_bool "lt escaped" (contains svg "&lt;c&gt;");
+    assert_bool "no raw lt in title region"
+      (not (contains svg ">A & B <c><"))
+
+  let test_render_flat_curve _ =
+    let svg = S.render [| 5.0; 5.0; 5.0 |] in
+    assert_bool "flat curve still produces a polyline"
+      (contains svg "class=\"pnl\"")
+
+  let test_write_round_trip _ =
+    let path = Filename.temp_file "svg" ".svg" in
+    S.write ~path [| 0.0; 2.0; -1.0 |];
+    let contents = read_all path in
+    Sys.remove path;
+    assert_bool "file starts with <svg"
+      (String.length contents > 5 && String.sub contents 0 5 = "<svg ")
+
+  let tests =
+    [
+      "svg_render_basic_structure" >:: test_render_basic_structure;
+      "svg_render_no_zero_line_when_strictly_positive"
+      >:: test_render_no_zero_line_when_strictly_positive;
+      "svg_render_with_actions_includes_markers"
+      >:: test_render_with_actions_includes_markers;
+      "svg_render_no_legend_markers_without_actions"
+      >:: test_render_no_legend_markers_without_actions;
+      "svg_render_custom_title" >:: test_render_custom_title;
+      "svg_render_escapes_xml_in_title" >:: test_render_escapes_xml_in_title;
+      "svg_render_flat_curve" >:: test_render_flat_curve;
+      "svg_write_round_trip" >:: test_write_round_trip;
+    ]
+end
+
 module MT = MetricsTester (Metrics)
 module CT = ConfigTester (Config)
 module AT = AgentTester (Agent)
 module ET = EnvironmentTester (Environment) (Config)
+module ST = SvgPlotTester (Svg_plot)
 
 let suite =
-  "teamproject3110" >::: List.flatten [ MT.tests; CT.tests; AT.tests; ET.tests ]
+  "teamproject3110"
+  >::: List.flatten [ MT.tests; CT.tests; AT.tests; ET.tests; ST.tests ]
 
 let () = run_test_tt_main suite

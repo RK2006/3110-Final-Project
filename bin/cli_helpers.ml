@@ -35,3 +35,19 @@ let maybe_save_pnl_curve pnl_curve =
     with Sys_error message ->
       Printf.printf "Could not save PnL curve: %s\n%!" message
   end
+
+let maybe_save_svg_plot ?actions ?title pnl_curve =
+  if prompt_yes_no "Save SVG chart? (y/n): " then begin
+    Printf.printf "Enter output path (for example outputs/pnl.svg): %!";
+    let path = String.trim (input_line stdin) in
+    let config =
+      match title with
+      | None -> Svg_plot.default_config
+      | Some t -> { Svg_plot.default_config with title = t }
+    in
+    try
+      Svg_plot.write ~config ?actions ~path pnl_curve;
+      Printf.printf "Saved SVG chart to %s\n%!" path
+    with Sys_error message ->
+      Printf.printf "Could not save SVG chart: %s\n%!" message
+  end
