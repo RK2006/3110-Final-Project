@@ -26,12 +26,14 @@ let rec prompt_mode () =
      Select mode:\n\
     \  [1] Train a new model\n\
     \  [2] Test an existing model\n\
+    \  [3] Grid search over hyperparameters\n\
      > %!";
   match String.trim (input_line stdin) with
   | "1" -> `Train
   | "2" -> `Test
+  | "3" -> `Grid
   | _ ->
-      Printf.printf "Invalid choice. Please enter 1 or 2.\n%!";
+      Printf.printf "Invalid choice. Please enter 1, 2, or 3.\n%!";
       prompt_mode ()
 
 let () =
@@ -58,3 +60,4 @@ let () =
 
       Train.run env
   | `Test -> Test.run ()
+  | `Grid -> Grid.run ()
