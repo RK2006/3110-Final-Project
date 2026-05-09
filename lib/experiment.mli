@@ -1,7 +1,13 @@
 (** Shared training, evaluation, and grid-search helpers for experiments. *)
 
-(** Q-learning settings for one training run. *)
+(** Which RL update rule the training loop applies. *)
+type algorithm =
+  | Q_learning  (** off-policy, target uses [max_a' Q(s',a')] *)
+  | Sarsa  (** on-policy, target uses [Q(s', a')] for the actually taken [a'] *)
+
+(** Hyperparameters for one training run. *)
 type hyperparameters = {
+  algorithm : algorithm;
   alpha : float;
   gamma : float;
   epsilon_start : float;
@@ -35,7 +41,8 @@ type grid = {
   num_episodes_values : int list;
 }
 
-(** [default_hyperparameters] mirrors the current single-run training config. *)
+(** [default_hyperparameters] mirrors the current single-run training config.
+    Defaults to [Q_learning]; flip [algorithm] to [Sarsa] to switch. *)
 val default_hyperparameters : hyperparameters
 
 (** [default_grid] is a small built-in search space for alpha, gamma,
@@ -53,8 +60,9 @@ val evaluate_policy : Environment.t -> (int -> Environment.action) -> evaluation
 val evaluate_agent : Environment.t -> Agent.t -> evaluation
 
 (** [train_agent ?progress_every env ~hyperparameters] trains a fresh agent in
-    [env] using [hyperparameters]. If [progress_every] is provided, progress is
-    printed every that many episodes. *)
+    [env] using [hyperparameters]. The update rule (Q-learning or SARSA) is
+    selected by [hyperparameters.algorithm]. If [progress_every] is provided,
+    progress is printed every that many episodes. *)
 val train_agent :
   ?progress_every:int ->
   Environment.t ->
@@ -70,7 +78,7 @@ val train_and_evaluate :
   trained_run
 
 (** [expand_grid ~base grid] produces the cartesian product of [grid], filling
-    in non-varied fields from [base]. *)
+    in non-varied fields from [base] (including [base.algorithm]). *)
 val expand_grid : base:hyperparameters -> grid -> hyperparameters list
 
 (** [grid_search env candidates] trains and evaluates one fresh agent per

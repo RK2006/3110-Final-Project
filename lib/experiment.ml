@@ -1,4 +1,9 @@
+type algorithm =
+  | Q_learning
+  | Sarsa
+
 type hyperparameters = {
+  algorithm : algorithm;
   alpha : float;
   gamma : float;
   epsilon_start : float;
@@ -30,6 +35,7 @@ type grid = {
 
 let default_hyperparameters =
   {
+    algorithm = Q_learning;
     alpha = Config.alpha;
     gamma = Config.gamma;
     epsilon_start = Config.epsilon_start;
@@ -47,10 +53,15 @@ let default_grid =
     num_episodes_values = [ 500; 1000; 1500 ];
   }
 
+let string_of_algorithm = function
+  | Q_learning -> "q_learning"
+  | Sarsa -> "sarsa"
+
 let describe_hyperparameters h =
   Printf.sprintf
-    "alpha=%.4f gamma=%.4f epsilon_start=%.4f epsilon_min=%.4f \
+    "algorithm=%s alpha=%.4f gamma=%.4f epsilon_start=%.4f epsilon_min=%.4f \
      epsilon_decay=%.4f episodes=%d seed=%d"
+    (string_of_algorithm h.algorithm)
     h.alpha h.gamma h.epsilon_start h.epsilon_min h.epsilon_decay h.num_episodes
     h.seed
 
@@ -93,6 +104,47 @@ let maybe_print_progress ?progress_every episode total_episodes reward epsilon =
         episode total_episodes reward epsilon
   | _ -> ()
 
+(* One Q-learning episode: pick action, step, update against max_a' Q(s',a'). *)
+let run_q_learning_episode env agent =
+  let state = ref (Environment.reset env) in
+  let running_reward = ref 0.0 in
+  let terminal = ref false in
+  while not !terminal do
+    let action_int = Agent.act agent ~state:!state ~training:true in
+    let action = Environment.action_of_int action_int in
+    let result = Environment.step env action in
+    Agent.update agent ~state:!state ~action:action_int ~reward:result.reward
+      ~next_state:result.next_state ~terminal:result.terminal;
+    running_reward := !running_reward +. result.reward;
+    state := result.next_state;
+    terminal := result.terminal
+  done;
+  !running_reward
+
+(* One SARSA episode: sample the next action *before* updating, so the target
+   uses Q(s', a') for the action the on-policy learner will actually take. *)
+let run_sarsa_episode env agent =
+  let state = ref (Environment.reset env) in
+  let action_int = ref (Agent.act agent ~state:!state ~training:true) in
+  let running_reward = ref 0.0 in
+  let terminal = ref false in
+  while not !terminal do
+    let action = Environment.action_of_int !action_int in
+    let result = Environment.step env action in
+    let next_action_int =
+      if result.terminal then 0
+      else Agent.act agent ~state:result.next_state ~training:true
+    in
+    Agent.update_sarsa agent ~state:!state ~action:!action_int
+      ~reward:result.reward ~next_state:result.next_state
+      ~next_action:next_action_int ~terminal:result.terminal;
+    running_reward := !running_reward +. result.reward;
+    state := result.next_state;
+    action_int := next_action_int;
+    terminal := result.terminal
+  done;
+  !running_reward
+
 let train_agent ?progress_every env ~hyperparameters =
   Random.init hyperparameters.seed;
   let agent =
@@ -100,24 +152,17 @@ let train_agent ?progress_every env ~hyperparameters =
       ~alpha:hyperparameters.alpha ~gamma:hyperparameters.gamma
       ~epsilon:hyperparameters.epsilon_start
   in
+  let run_episode =
+    match hyperparameters.algorithm with
+    | Q_learning -> run_q_learning_episode
+    | Sarsa -> run_sarsa_episode
+  in
   for episode = 1 to hyperparameters.num_episodes do
-    let state = ref (Environment.reset env) in
-    let running_reward = ref 0.0 in
-    let terminal = ref false in
-    while not !terminal do
-      let action_int = Agent.act agent ~state:!state ~training:true in
-      let action = Environment.action_of_int action_int in
-      let result = Environment.step env action in
-      Agent.update agent ~state:!state ~action:action_int ~reward:result.reward
-        ~next_state:result.next_state ~terminal:result.terminal;
-      running_reward := !running_reward +. result.reward;
-      state := result.next_state;
-      terminal := result.terminal
-    done;
+    let running_reward = run_episode env agent in
     Agent.decay_epsilon agent ~rate:hyperparameters.epsilon_decay
       ~min_epsilon:hyperparameters.epsilon_min;
     maybe_print_progress ?progress_every episode hyperparameters.num_episodes
-      !running_reward (Agent.epsilon agent)
+      running_reward (Agent.epsilon agent)
   done;
   agent
 
@@ -175,15 +220,16 @@ let sorted_runs runs =
 let grid_results_to_csv runs path =
   let oc = open_out path in
   output_string oc
-    "alpha,gamma,epsilon_start,epsilon_min,epsilon_decay,num_episodes,seed,total_pnl,sharpe_ratio,max_drawdown,win_rate,winning_trades,num_trades,final_pnl\n";
+    "algorithm,alpha,gamma,epsilon_start,epsilon_min,epsilon_decay,num_episodes,seed,total_pnl,sharpe_ratio,max_drawdown,win_rate,winning_trades,num_trades,final_pnl\n";
   List.iter
     (fun run ->
       let h = run.hyperparameters in
       let m = run.evaluation.metrics in
-      Printf.fprintf oc "%f,%f,%f,%f,%f,%d,%d,%f,%f,%f,%f,%d,%d,%f\n" h.alpha
-        h.gamma h.epsilon_start h.epsilon_min h.epsilon_decay h.num_episodes
-        h.seed m.total_pnl m.sharpe_ratio m.max_drawdown m.win_rate
-        m.winning_trades m.num_trades m.final_pnl)
+      Printf.fprintf oc "%s,%f,%f,%f,%f,%f,%d,%d,%f,%f,%f,%f,%d,%d,%f\n"
+        (string_of_algorithm h.algorithm)
+        h.alpha h.gamma h.epsilon_start h.epsilon_min h.epsilon_decay
+        h.num_episodes h.seed m.total_pnl m.sharpe_ratio m.max_drawdown
+        m.win_rate m.winning_trades m.num_trades m.final_pnl)
     runs;
   close_out oc
 
@@ -192,13 +238,16 @@ let print_grid_results runs =
   Printf.printf
     "\n\
      Grid Search Results\n\
-     rank | total_pnl | sharpe | win_rate | alpha | gamma | eps_decay | episodes\n";
+     rank | algo        | total_pnl | sharpe | win_rate | alpha | gamma | \
+     eps_decay | episodes\n";
   List.iteri
     (fun idx run ->
       let h = run.hyperparameters in
       let m = run.evaluation.metrics in
       Printf.printf
-        "%4d | %9.2f | %6.3f | %7.2f%% | %.4f | %.4f | %.4f | %d\n%!" (idx + 1)
+        "%4d | %-11s | %9.2f | %6.3f | %7.2f%% | %.4f | %.4f | %.4f | %d\n%!"
+        (idx + 1)
+        (string_of_algorithm h.algorithm)
         m.total_pnl m.sharpe_ratio (m.win_rate *. 100.0) h.alpha h.gamma
         h.epsilon_decay h.num_episodes)
     ranked
