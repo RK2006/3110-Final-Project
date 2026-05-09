@@ -1,18 +1,21 @@
 open Teamproject3110
 
 let run env =
-  Printf.printf "\nTraining for %d episodes...\n%!" Config.num_episodes;
+  let algorithm, algo_label = Cli_helpers.prompt_algorithm () in
+  let hyperparameters = { Experiment.default_hyperparameters with algorithm } in
+  Printf.printf "\nTraining %s for %d episodes...\n%!" algo_label
+    Config.num_episodes;
   let run =
-    Experiment.train_and_evaluate env
-      ~hyperparameters:Experiment.default_hyperparameters ~progress_every:100
+    Experiment.train_and_evaluate env ~hyperparameters ~progress_every:100
   in
   Printf.printf "\nRunning evaluation episode (greedy)...\n%!";
-  Printf.printf "\n── Q-learning Evaluation Metrics ──\n";
+  Printf.printf "\n── %s Evaluation Metrics ──\n" algo_label;
   Metrics.print run.evaluation.metrics;
   Cli_helpers.maybe_print_pnl_curve run.evaluation.pnl_curve;
   Cli_helpers.maybe_save_pnl_curve run.evaluation.pnl_curve;
   Cli_helpers.maybe_save_svg_plot ~actions:run.evaluation.actions
-    ~title:"Q-learning Training PnL" run.evaluation.pnl_curve;
+    ~title:(algo_label ^ " Training PnL")
+    run.evaluation.pnl_curve;
 
   if Cli_helpers.prompt_yes_no "\nSave model? (y/n): " then begin
     Printf.printf "Enter filename to save model (in models/): %!";

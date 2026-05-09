@@ -19,6 +19,20 @@ let rec prompt_yes_no prompt =
       Printf.printf "Please answer y or n.\n%!";
       prompt_yes_no prompt
 
+let rec prompt_algorithm () =
+  Printf.printf
+    "\n\
+     Select algorithm:\n\
+    \  [1] Q-learning (off-policy)\n\
+    \  [2] SARSA (on-policy)\n\
+     > %!";
+  match String.trim (input_line stdin) with
+  | "1" -> (Experiment.Q_learning, "Q-learning")
+  | "2" -> (Experiment.Sarsa, "SARSA")
+  | _ ->
+      Printf.printf "Invalid choice. Please enter 1 or 2.\n%!";
+      prompt_algorithm ()
+
 let maybe_print_pnl_curve pnl_curve =
   if prompt_yes_no "Show ASCII PnL plot? (y/n): " then begin
     print_endline "";

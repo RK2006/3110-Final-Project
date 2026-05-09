@@ -121,7 +121,7 @@ let run_q_learning_episode env agent =
   done;
   !running_reward
 
-(* One SARSA episode: sample the next action *before* updating, so the target
+(* One SARSA episode: sample the next action before updating, so the target
    uses Q(s', a') for the action the on-policy learner will actually take. *)
 let run_sarsa_episode env agent =
   let state = ref (Environment.reset env) in

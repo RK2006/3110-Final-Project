@@ -11,12 +11,14 @@ let run () =
     (Environment.episode_length env)
     Config.num_states;
 
-  let candidates =
-    Experiment.expand_grid ~base:Experiment.default_hyperparameters
-      Experiment.default_grid
+  let algorithm, algo_label = Cli_helpers.prompt_algorithm () in
+  let base =
+    { Experiment.default_hyperparameters with algorithm }
   in
+  let candidates = Experiment.expand_grid ~base Experiment.default_grid in
   let total = List.length candidates in
-  Printf.printf "\nRunning grid search over %d configurations...\n%!" total;
+  Printf.printf "\nRunning %s grid search over %d configurations...\n%!"
+    algo_label total;
 
   let runs =
     List.mapi
@@ -49,7 +51,8 @@ let run () =
       Cli_helpers.maybe_print_pnl_curve best.evaluation.pnl_curve;
       Cli_helpers.maybe_save_pnl_curve best.evaluation.pnl_curve;
       Cli_helpers.maybe_save_svg_plot ~actions:best.evaluation.actions
-        ~title:"Grid Search Best Run PnL" best.evaluation.pnl_curve;
+        ~title:(algo_label ^ " Grid Search Best Run PnL")
+        best.evaluation.pnl_curve;
       if Cli_helpers.prompt_yes_no "\nSave best model? (y/n): " then begin
         Printf.printf "Enter filename to save model (in models/): %!";
         let model_name = String.trim (input_line stdin) in
