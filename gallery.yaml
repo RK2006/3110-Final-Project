@@ -17,9 +17,10 @@ title: "Q-Learning Stock Trading Agent"
 git-repo: "https://github.coecis.cornell.edu/ak2788/TeamProject3110"
 demo-video-url: "https://youtu.be/9Saq79bCdsc"
 desc: >
-  This system trains a Q-Learning RL agent to make buy, sell, hold decisions on historical stock market data. 
+  This system trains a Q-Learning RL agent and SARSA RL agent to make buy, sell, hold decisions on historical stock market data. 
   It learns profitable trading strategies through trial and error. The user would interact with an interface where they can enter
   a training and testing set to see how the model does. Once it is trained, we can test the agent on market data, with its 
   performance visualized through a chart showing portfolio value and trade history over time. This system will include baseline 
   strategies, like buy-and-hold and moving average, so that the RL agent’s performance can be directly compared with conventional 
-  approaches using metrics like total return or Sharpe ratio.
+  approaches using metrics like total return or Sharpe ratio. The program also comes with a feature to run grid search, which finds optimal
+  hyperparameters for the given algorithm (Q-learning, SARSA)
