@@ -6,11 +6,6 @@ To build and run the project, you should have:
 
 - OCaml with an OPAM switch
 - Dune 3.21 or newer
-- `ounit2` for the test suite
-- `bisect_ppx` for test instrumentation
-- `odoc` if you want documentation support
-
-If you want to use the included Python dataset fetcher, you will also need:
 
 - Python 3
 - the `yfinance` package
@@ -121,24 +116,13 @@ In test mode, the program:
 - prints metrics
 - optionally shows and saves the PnL curve
 
-The repository already includes one sample model:
-
-- `models/AAPL_trader_1.txt`
+The repository already includes a couple sample models:
 
 Example inputs:
 
 ```text
 Enter CSV filename (must be in data/): AAPL_data.csv
 Enter model filename (must be in models/): AAPL_trader_1.txt
-```
-
-If you want to save PnL CSV files into a separate folder such as `outputs/`,
-create that folder first.
-
-Example:
-
-```bash
-mkdir -p outputs
 ```
 
 ## Running the Tests
