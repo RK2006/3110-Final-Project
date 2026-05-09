@@ -1,6 +1,7 @@
-(** AF: a tabular Q-learner. [q.(s).(a)] is our current guess of Q(s,a). [alpha]
-    is the learning rate, [gamma] the discount, and [epsilon] the chance of
-    acting randomly during training.
+(** AF: a tabular Q-learner / SARSA learner. [q.(s).(a)] is our current guess of
+    Q(s,a). [alpha] is the learning rate, [gamma] the discount, and [epsilon]
+    the chance of acting randomly during training. The same Q-table supports
+    both Q-learning ([update]) and SARSA ([update_sarsa]) updates.
 
     RI: [num_states, num_actions > 0]; [q] is shaped [num_states x num_actions];
     [alpha], [gamma], [epsilon] all live in [[0, 1]]. *)
@@ -44,6 +45,14 @@ let act t ~state ~training =
 let update t ~state ~action ~reward ~next_state ~terminal =
   let q_sa = t.q.(state).(action) in
   let future = if terminal then 0.0 else t.gamma *. max_q t next_state in
+  let td = reward +. future -. q_sa in
+  t.q.(state).(action) <- q_sa +. (t.alpha *. td)
+
+let update_sarsa t ~state ~action ~reward ~next_state ~next_action ~terminal =
+  let q_sa = t.q.(state).(action) in
+  let future =
+    if terminal then 0.0 else t.gamma *. t.q.(next_state).(next_action)
+  in
   let td = reward +. future -. q_sa in
   t.q.(state).(action) <- q_sa +. (t.alpha *. td)
 
