@@ -1,52 +1,164 @@
 # Installation Guide
 
-## Setup
+## Requirements
 
-Clone the repository and install dependencies:
+To build and run the project, you should have:
+
+- OCaml with an OPAM switch
+- Dune 3.21 or newer
+- `ounit2` for the test suite
+- `bisect_ppx` for test instrumentation
+- `odoc` if you want documentation support
+
+If you want to use the included Python dataset fetcher, you will also need:
+
+- Python 3
+- the `yfinance` package
+
+## Clone the Repository
 
 ```bash
-git clone https://github.com/<org>/<repo>.git
-cd <repo>
+git clone git@github.coecis.cornell.edu:ak2788/TeamProject3110.git
+cd TeamProject3110
 ```
 
----
+## OCaml Setup
 
-## Getting a Dataset
+If you already have a working CS 3110 OPAM switch, activate it and install the
+project dependencies:
 
-You need a CSV file with `Date` and `Close` columns placed in the `data/` directory. There are two ways to get one:
-
-**Option 1 — Use an already included script, or use the included Python script to generate one:**
 ```bash
-python data/fetch_stock_data.py STOCK_TICKER data/STOCK_TICKER_data.csv
+eval $(opam env)
+opam install dune ounit2 bisect_ppx odoc ocamlformat
 ```
-This will download price data and save a CSV to `data/` automatically.
 
-**Option 2 — Use your own CSV:**
-Create or download a CSV file in the following format and place it in `data/`:
+If you prefer to use a fresh switch for the project, create one first, then run
+the same install command above.
+
+## Building the Project
+
+```bash
+dune build
 ```
+
+## Datasets
+
+The trading environment expects CSV files with the columns:
+
+```text
 Date,Close
 2020-01-02,300.35
 2020-01-03,297.43
 ...
 ```
 
----
+CSV files should be placed in the `data/` directory.
 
-## Running
+The repository already includes sample datasets:
+
+- `data/AAPL_data.csv`
+- `data/MSFT_data.csv`
+- `data/VZ_data.csv`
+
+### Optional: Fetch New Stock Data
+
+The repo includes `data/fetch_stock_data.py`, which downloads the last 10 years
+of daily closing prices for a ticker.
+
+Install the Python dependency:
 
 ```bash
-dune exec bin/main.exe
+python3 -m pip install yfinance
 ```
 
-You will be prompted to enter the filename of your CSV:
+Then run:
+
+```bash
+python3 data/fetch_stock_data.py AAPL data/AAPL_data.csv
 ```
+
+You can replace `AAPL` with another ticker and choose a different output file
+inside `data/`.
+
+## Running the Program
+
+Run the executable with:
+
+```bash
+dune exec teamproject3110
+```
+
+The program will prompt you to choose one of two modes:
+
+1. Train a new model
+2. Test an existing model
+
+### Train Mode
+
+In train mode, the program:
+
+- asks for a CSV file from `data/`
+- evaluates several baseline strategies
+- trains a Q-learning trading agent
+- prints evaluation metrics
+- optionally shows an ASCII PnL plot
+- optionally saves the PnL curve to CSV
+- optionally saves the learned model in `models/`
+
+Example:
+
+```text
 Enter CSV filename (in data/): AAPL_data.csv
 ```
 
----
+### Test Mode
+
+In test mode, the program:
+
+- asks for a CSV file from `data/`
+- asks for a saved model from `models/`
+- evaluates that model greedily on the chosen dataset
+- prints metrics
+- optionally shows and saves the PnL curve
+
+The repository already includes one sample model:
+
+- `models/AAPL_trader_1.txt`
+
+Example inputs:
+
+```text
+Enter CSV filename (must be in data/): AAPL_data.csv
+Enter model filename (must be in models/): AAPL_trader_1.txt
+```
+
+If you want to save PnL CSV files into a separate folder such as `outputs/`,
+create that folder first.
+
+Example:
+
+```bash
+mkdir -p outputs
+```
 
 ## Running the Tests
 
 ```bash
+dune test
+```
+
+## Helpful Commands
+
+Rebuild from scratch:
+
+```bash
+dune clean
+dune build
+```
+
+Run the test suite after cleaning:
+
+```bash
+dune clean
 dune test
 ```
