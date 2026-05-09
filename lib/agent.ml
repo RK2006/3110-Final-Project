@@ -1,10 +1,10 @@
-(** AF: a tabular Q-learner / SARSA learner. [q.(s).(a)] is our current guess of
-    Q(s,a). [alpha] is the learning rate, [gamma] the discount, and [epsilon]
-    the chance of acting randomly during training. The same Q-table supports
-    both Q-learning ([update]) and SARSA ([update_sarsa]) updates.
+(* AF: a tabular Q-learner / SARSA learner. [q.(s).(a)] is our current guess of
+   Q(s,a). [alpha] is the learning rate, [gamma] the discount, and [epsilon]
+   the chance of acting randomly during training. The same Q-table supports
+   both Q-learning ([update]) and SARSA ([update_sarsa]) updates.
 
-    RI: [num_states, num_actions > 0]; [q] is shaped [num_states x num_actions];
-    [alpha], [gamma], [epsilon] all live in [[0, 1]]. *)
+   RI: [num_states, num_actions > 0]; [q] is shaped [num_states x num_actions];
+   [alpha], [gamma], [epsilon] all live in [[0, 1]]. *)
 type t = {
   num_states : int;
   num_actions : int;
