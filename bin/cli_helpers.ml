@@ -19,6 +19,15 @@ let rec prompt_yes_no prompt =
       Printf.printf "Please answer y or n.\n%!";
       prompt_yes_no prompt
 
+let rec prompt_string prompt =
+  Printf.printf "%s%!" prompt;
+  let s = String.trim (input_line stdin) in
+  if String.length s = 0 then begin
+    Printf.printf "Input cannot be empty. Please try again.\n%!";
+    prompt_string prompt
+  end
+  else s
+
 let rec prompt_algorithm () =
   Printf.printf
     "\n\
@@ -41,27 +50,27 @@ let maybe_print_pnl_curve pnl_curve =
 
 let maybe_save_pnl_curve pnl_curve =
   if prompt_yes_no "Save PnL curve to CSV? (y/n): " then begin
-    Printf.printf "Enter output path (for example outputs/pnl_curve.csv): %!";
-    let path = String.trim (input_line stdin) in
+    let path = prompt_string "Enter filename (in outputs/): " in
+    let full_path = "outputs/" ^ path in
     try
-      Pnl_plot.write_csv pnl_curve path;
-      Printf.printf "Saved PnL curve to %s\n%!" path
+      Pnl_plot.write_csv pnl_curve full_path;
+      Printf.printf "Saved PnL curve to %s\n%!" full_path
     with Sys_error message ->
       Printf.printf "Could not save PnL curve: %s\n%!" message
   end
 
 let maybe_save_svg_plot ?actions ?title pnl_curve =
   if prompt_yes_no "Save SVG chart? (y/n): " then begin
-    Printf.printf "Enter output path (for example outputs/pnl.svg): %!";
-    let path = String.trim (input_line stdin) in
+    let path = prompt_string "Enter filename (in outputs/): " in
+    let full_path = "outputs/" ^ path in
     let config =
       match title with
       | None -> Svg_plot.default_config
       | Some t -> { Svg_plot.default_config with title = t }
     in
     try
-      Svg_plot.write ~config ?actions ~path pnl_curve;
-      Printf.printf "Saved SVG chart to %s\n%!" path
+      Svg_plot.write ~config ?actions ~path:full_path pnl_curve;
+      Printf.printf "Saved SVG chart to %s\n%!" full_path
     with Sys_error message ->
       Printf.printf "Could not save SVG chart: %s\n%!" message
   end
